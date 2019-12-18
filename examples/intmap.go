@@ -1,62 +1,28 @@
-package main
 
-import (
-	"flag"
-	"os"
-	"text/template"
-)
-
-type data struct {
-	Key   string
-	Name  string
-	Value string
-}
-
-func main() {
-	var d data
-	var out string
-	flag.StringVar(&d.Key, "key", "", "The subtype used for the tree{{.Name}}map being generated")
-	flag.StringVar(&d.Value, "value", "", "The value used for the tree{{.Name}}map being generated")
-	flag.StringVar(&d.Name, "name", "", "The name used for the tree{{.Name}}map being generated")
-	flag.StringVar(&out, "out", "intmap.go", "The filename of the generated tree{{.Name}}map")
-
-	flag.Parse()
-	t := template.Must(template.New("tree{{.Name}}map").Parse(treeTemplate))
-
-	fout, err := os.Create(out)
-	if err != nil {
-		panic(err)
-	}
-
-	defer fout.Close()
-	t.Execute(fout, &d)
-}
-
-var treeTemplate = `
-package treemap
+package examples
 
 import (
 	"bytes"
 	"fmt"
 )
 
-type CompareFunc func(a {{.Key}}, b {{.Key}}) int //GENERIC
-type TraverseFunc func(k {{.Key}}, v {{.Value}}) bool // GENERIC
+type CompareFunc func(a int, b int) int //GENERIC
+type TraverseFunc func(k int, v int) bool // GENERIC
 
-// Tree{{.Name}}Map implementation
+// TreeIntMap implementation
 
-type Tree{{.Name}}Map struct {
+type TreeIntMap struct {
 	root *node
 	comp CompareFunc
 }
 
-func New{{.Name}}Map(compFn CompareFunc) *Tree{{.Name}}Map {
-	return &Tree{{.Name}}Map{
+func NewIntMap(compFn CompareFunc) *TreeIntMap {
+	return &TreeIntMap{
 		comp: compFn,
 	}
 }
 
-func (t *Tree{{.Name}}Map) Insert(key {{.Key}}, data {{.Value}}) bool { // GENERIC
+func (t *TreeIntMap) Insert(key int, data int) bool { // GENERIC
 	if t.root == nil {
 		t.root = newNode(nil, t.comp, false, key, data)
 		t.root.insertFixup(t.root)
@@ -72,11 +38,11 @@ func (t *Tree{{.Name}}Map) Insert(key {{.Key}}, data {{.Value}}) bool { // GENER
 	return false
 }
 
-func (t *Tree{{.Name}}Map) Get(key {{.Key}}) ({{.Value}}, bool) { // GENERIC
+func (t *TreeIntMap) Get(key int) (int, bool) { // GENERIC
 	var d int
 	var ok bool
 
-	t.Traverse(func(k {{.Key}}, v {{.Value}}) bool { // GENERIC
+	t.Traverse(func(k int, v int) bool { // GENERIC
 		if t.comp(k, key) == 0 {
 			ok = true
 			d = v
@@ -89,9 +55,9 @@ func (t *Tree{{.Name}}Map) Get(key {{.Key}}) ({{.Value}}, bool) { // GENERIC
 	return d, ok
 }
 
-func (t Tree{{.Name}}Map) String() string {
+func (t TreeIntMap) String() string {
 	buf := new(bytes.Buffer)
-	t.Traverse(func(k {{.Key}}, v {{.Value}}) bool { // GENERIC
+	t.Traverse(func(k int, v int) bool { // GENERIC
 		buf.WriteString(fmt.Sprintf("%v(%v)->", k, v))
 		return true
 	})
@@ -99,15 +65,15 @@ func (t Tree{{.Name}}Map) String() string {
 	return buf.String()
 }
 
-func (t *Tree{{.Name}}Map) Traverse(proj TraverseFunc) {
+func (t *TreeIntMap) Traverse(proj TraverseFunc) {
 	t.traverse(t.root, proj)
 }
 
-func (t *Tree{{.Name}}Map) TraverseBF(proj TraverseFunc) {
+func (t *TreeIntMap) TraverseBF(proj TraverseFunc) {
 	t.traverseBF(t.root, proj)
 }
 
-func (t *Tree{{.Name}}Map) traverseBF(n *node, proj TraverseFunc) {
+func (t *TreeIntMap) traverseBF(n *node, proj TraverseFunc) {
 	if n == nil {
 		return
 	}
@@ -132,7 +98,7 @@ func (t *Tree{{.Name}}Map) traverseBF(n *node, proj TraverseFunc) {
 	}
 }
 
-func (t *Tree{{.Name}}Map) traverse(n *node, proj TraverseFunc) {
+func (t *TreeIntMap) traverse(n *node, proj TraverseFunc) {
 	if n == nil {
 		return
 	}
@@ -148,8 +114,8 @@ func (t *Tree{{.Name}}Map) traverse(n *node, proj TraverseFunc) {
 
 // Node Implementation. Everything must be private at this point
 type nodeData struct { // GENERIC
-	key  {{.Key}}
-	data {{.Value}}
+	key  int
+	data int
 }
 
 type node struct {
@@ -163,7 +129,7 @@ type node struct {
 }
 
 // GENERIC
-func newNode(parent *node, c CompareFunc, isLeftChild bool, key {{.Key}}, data {{.Value}}) *node {
+func newNode(parent *node, c CompareFunc, isLeftChild bool, key int, data int) *node {
 	return &node{
 		black:       false, // a node is always inserted red
 		isLeftChild: isLeftChild,
@@ -179,7 +145,7 @@ func newNode(parent *node, c CompareFunc, isLeftChild bool, key {{.Key}}, data {
 }
 
 // GENERIC
-func (n *node) insert(key {{.Key}}, data {{.Value}}) *node {
+func (n *node) insert(key int, data int) *node {
 	addedNode := n.insertSimple(key, data)
 	if addedNode != nil {
 		return n.insertFixup(addedNode)
@@ -189,7 +155,7 @@ func (n *node) insert(key {{.Key}}, data {{.Value}}) *node {
 }
 
 // GENERIC
-func (n *node) insertSimple(key {{.Key}}, data {{.Value}}) *node {
+func (n *node) insertSimple(key int, data int) *node {
 	res := n.comp(n.data.key, key)
 	if res < 0 {
 		if n.left != nil {
@@ -413,4 +379,3 @@ func violation(n *node) insertViolation {
 	return noViolation
 }
 
-`
